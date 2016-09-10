@@ -158,7 +158,7 @@ def elu(x):
 activation_functions.add('elu', elu)
 
 
-def main():
+def train():
     print("Starting...")
     pop = population.Population(os.path.join(os.path.dirname(__file__), 'nn_config'))
     # HINT change checkpoints for new try or reloading
@@ -175,16 +175,6 @@ def main():
 
     winner = pop.statistics.best_genome()
     print('\nBest genome:\n{!s}'.format(winner))
-    print('\nOutput:')
-    #winner_net = nn.create_recurrent_phenotype(winner)
-    winner_net = nn.create_feed_forward_phenotype(winner)
-    game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(10, 10), param=ca.defaultParameters)
-    game.setNewSpecies(0, 'winner', 'blue')
-    while game.step < 30:
-        game.setDecisions('winner', netDecision(game.getState(), 'winner', winner_net))
-        game.evolve()
-    print("Ended with: ", countSpecies(game.getState(), 'winner'))
-    print(game.cells[game.cells[:, 1] != 'empty', :4])
 
 
 def visualizeWinners(checkpoint):
@@ -192,7 +182,18 @@ def visualizeWinners(checkpoint):
     pop.load_checkpoint('checkpoints/popv1.cpt')
     pop.run(eval_fitness_internalfight, 1)
     winner = pop.statistics.best_genome()
-    winner_net = nn.create_feed_forward_phenotype(winner)
+    p = []
+    best4 = []
+    for s in pop.species:
+        p.extend(s.members)
+    for c in np.random.choice(len(p),4,replace=False):
+        best4.append(p[c])
+
+    nets = {}
+    nets['place1'] = nn.create_feed_forward_phenotype(winner)
+    nets['place2'] = nn.create_feed_forward_phenotype(best4[1])
+    nets['place3'] = nn.create_feed_forward_phenotype(best4[2])
+    nets['place4'] = nn.create_feed_forward_phenotype(best4[3])
 
     filelist = glob.glob("pics/*")
     for f in filelist:
@@ -200,17 +201,20 @@ def visualizeWinners(checkpoint):
 
     game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(15, 15), param=ca.defaultParameters)
     shape = game.getState()['shape']
-    game.setNewSpecies(int(shape[1]*shape[0]/4*0), 'winner1', 'blue')
-    game.setNewSpecies(int(shape[1]*shape[0]/4*1-1), 'winner2', 'red')
-    game.setNewSpecies(int(shape[1]*shape[0]/4*2-1), 'winner3', 'green')
-    game.setNewSpecies(int(shape[1]*shape[0]/4*3-1), 'winner4', 'yellow')
+    game.setNewSpecies(int(shape[1]*shape[0]/4*0), 'place1', 'red')
+    game.setNewSpecies(int(shape[1]*shape[0]/4*1-1), 'place2', 'yellow')
+    game.setNewSpecies(int(shape[1]*shape[0]/4*2-1), 'place3', 'green')
+    game.setNewSpecies(int(shape[1]*shape[0]/4*3-1), 'place4', 'blue')
 
     saveStatePicture(game.getState(), "pics")
 
-    while game.step < 100:
+    while (game.step < 200) & (len(game.findSpecies()) > 2):
         state = game.getState()
         for s in game.findSpecies():
-            game.setDecisions(s,netDecision(state,s,winner_net))
+            try:
+                game.setDecisions(s,netDecision(state,s,nets[s]))
+            except:
+                pass
         game.evolve()
         saveStatePicture(state, "pics")
 
@@ -221,13 +225,16 @@ def visualizeWinners(checkpoint):
     ex.show()
     sys.exit(app.exec_())
 
-if __name__ == "__main__":
+def main():
 	if len(sys.argv) > 1:
 		if sys.argv[1] == 'train':
 			print("Starting training")
 			for _ in range(100):
-				main()
+				train()
 			exit()
 			
 	print("Visualization only")
 	visualizeWinners('checkpoints/popv1.cpt')
+
+if __name__ == "__main__":
+	main()
