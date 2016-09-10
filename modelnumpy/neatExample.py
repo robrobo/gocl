@@ -54,16 +54,18 @@ def netDecision(state, spec, net):
     cells = state['cells'][mask]
     neighbors = state['cells'][np.int_(state['neighbors'][mask])]
     secondneighbors = state['cells'][np.int_(state['secondneighbors'][mask])]
-    # input will be self.energy, all 6 neighbors as -1,0,1 enemy,empty,friendly, 7 total, 19 if secondneighbors
+    # input will be self.energy, all 6 neighbors as -1,0,1 enemy,empty,friendly, then energies, 13 total, 19 if secondneighbors
     neighborvalues = np.zeros(np.shape(neighbors)[:2])
     neighborvalues[(neighbors[:, :, 1] != spec) & (neighbors[:, :, 1] != 'empty')] = -1
     neighborvalues[neighbors[:, :, 1] == spec] = 1
+    neighborenergies = neighbors[:, :, 3]
 
-    inputs = np.zeros((N, 7))
+    inputs = np.zeros((N, 13))
     inputs[:, 0] = cells[:, 3]
     inputs[:, 1:7] = neighborvalues
-    # output will be -1-1, stay,clone 1-6, move 1-6, fight 1-6
-    outputs = np.zeros((N,19))
+    inputs[:, 7:13] = neighborenergies
+    # output will be stay, wall, clone 1-6, move 1-6, fight 1-6, infuse 1-6: 26 total
+    outputs = np.zeros((N,26))
     for i in range(N):
         outputs[i] = net.serial_activate(inputs[i])
         #outputs[i] = net.activate(inputs[i])
@@ -74,15 +76,19 @@ def netDecision(state, spec, net):
     actions[:,1] = 0
 
     actions[choices == 0] = [['stay', 0]]
-    mask = (choices > 0 ) & (choices < 7)
+    actions[choices == 1] = [['wall', 0]]
+    mask = (choices > 1 ) & (choices < 8)
     actions[mask,0] = 'clone'
-    actions[mask,1] = choices[mask] - 1
-    mask = (choices > 6 ) & (choices < 13)
+    actions[mask,1] = choices[mask] - 2
+    mask = (choices > 7 ) & (choices < 14)
     actions[mask,0] = 'move'
-    actions[mask,1] = choices[mask] - 7
-    mask = (choices > 12 ) & (choices < 19)
+    actions[mask,1] = choices[mask] - 8
+    mask = (choices > 13 ) & (choices < 20)
     actions[mask,0] = 'fight'
-    actions[mask,1] = choices[mask] - 13
+    actions[mask,1] = choices[mask] - 14
+    mask = (choices > 19 ) & (choices < 26)
+    actions[mask,0] = 'infuse'
+    actions[mask,1] = choices[mask] - 20
     return actions
 
 
@@ -117,7 +123,7 @@ def eval_fitness_single(genomes):
 
 # this is a fitness function for training genomes by letting them play on a common field
 def eval_fitness_internalfight(allgenomes):
-    num_runs = 2
+    num_runs = 3
     for g in allgenomes:
         g.fitness = 0
     # sadly, the number of genomes from neat-python is not fixed, so we only train some to fit %4
@@ -128,11 +134,11 @@ def eval_fitness_internalfight(allgenomes):
         grouping = np.reshape(np.random.permutation(len(genomes)), (len(genomes) / 4, 4))
         for group in grouping:
             nets = []
-            game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(10, 10), param=ca.defaultParameters)
+            game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(15, 15), param=ca.defaultParameters)
             for i, g in enumerate(group):
                 nets.append(nn.create_feed_forward_phenotype(genomes[g]))
-                game.setNewSpecies(i * 25, 'spec'+str(i))
-            while game.step < 30:
+                game.setNewSpecies(int(i * 15*15/4), 'spec'+str(i))
+            while game.step < 100:
                 state = game.getState()
                 for j, g in enumerate(group):
                       game.setDecisions('spec'+str(j), netDecision(state, 'spec'+str(j), nets[j]))
@@ -160,7 +166,7 @@ def main():
         pop.load_checkpoint(os.path.join(os.path.dirname(__file__), 'checkpoints/popv1.cpt'))
     except:
         pass
-    pop.run(eval_fitness_internalfight, 1)
+    pop.run(eval_fitness_internalfight, 10)
     pop.save_checkpoint(os.path.join(os.path.dirname(__file__), 'checkpoints/popv1.cpt'))
 
     statistics.save_stats(pop.statistics)
@@ -192,23 +198,21 @@ def visualizeWinners(checkpoint):
     for f in filelist:
         os.remove(f)
 
-    game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(30, 30), param=ca.defaultParameters)
+    game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(15, 15), param=ca.defaultParameters)
     shape = game.getState()['shape']
-    game.setNewSpecies(shape[1]/4*shape[0]+shape[1]/4, 'winner1', 'blue')
-    game.setNewSpecies(shape[1]/4*shape[0]+shape[1]*3/4, 'winner2', 'red')
-    game.setNewSpecies(shape[1]*3/4*shape[0]+shape[1]/4, 'winner3', 'green')
-    game.setNewSpecies(shape[1]*3/4*shape[0]+shape[1]*3/4, 'winner4', 'yellow')
+    game.setNewSpecies(int(shape[1]*shape[0]/4*0), 'winner1', 'blue')
+    game.setNewSpecies(int(shape[1]*shape[0]/4*1-1), 'winner2', 'red')
+    game.setNewSpecies(int(shape[1]*shape[0]/4*2-1), 'winner3', 'green')
+    game.setNewSpecies(int(shape[1]*shape[0]/4*3-1), 'winner4', 'yellow')
 
     saveStatePicture(game.getState(), "pics")
 
-    while game.step < 1000:
+    while game.step < 100:
         state = game.getState()
         for s in game.findSpecies():
             game.setDecisions(s,netDecision(state,s,winner_net))
         game.evolve()
         saveStatePicture(state, "pics")
-
-    print(game.cells[game.cells[:,1] != 'empty',:4])
 
     app = QApplication(sys.argv)
     pics = sort_nicely(glob.glob("pics/*"))
@@ -218,5 +222,12 @@ def visualizeWinners(checkpoint):
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
-    #main()
-    visualizeWinners('checkpoints/popv1.cpt')
+	if len(sys.argv) > 1:
+		if sys.argv[1] == 'train':
+			print("Starting training")
+			for _ in range(100):
+				main()
+			exit()
+			
+	print("Visualization only")
+	visualizeWinners('checkpoints/popv1.cpt')

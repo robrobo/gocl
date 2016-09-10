@@ -19,10 +19,15 @@ def main():
     filelist = glob.glob("pics/*")
     for f in filelist:
         os.remove(f)
-    game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(10,10),param=ca.defaultParameters)
+    x = 10
+    y = 20
+    game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(x,y),param=ca.defaultParameters)
 
-    game.setNewSpecies(3, 'Move', 'blue', 3)
-    game.setNewSpecies(11, 'Clone', 'green', 30)
+    game.setNewSpecies(int(x*y/4*0), 'Clone', 'green', 30)
+    game.setNewSpecies(int(x*y/4*1), 'Move', 'blue', 3)
+    game.setNewSpecies(int(x*y/4*2), 'Move', 'blue', 3)
+    game.setNewSpecies(int(x*y/4*3), 'Move', 'blue', 3)
+    
 
     saveStatePicture(game.getState(), "pics")
 
