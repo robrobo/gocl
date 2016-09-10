@@ -46,8 +46,8 @@ class HexagonGenerator(object):
 
 
 def saveStatePicture(state, directory):
-    size = (1000,1000)
-    edge = min(int(size[0]/state['shape'][0]/3**.5), int(size[1]/state['shape'][1]/2))
+    edge = 32
+    size = (int(state['shape'][1]*3**.5*edge+edge)),(int(state['shape'][0]*1.5*edge+edge))
     if not os.path.exists(directory):
         os.makedirs(directory)
     hexagon_generator = HexagonGenerator(2*edge)
