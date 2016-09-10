@@ -32,7 +32,23 @@ class Example(QMainWindow):
         self.spinBox.valueChanged.connect(self.spinChange)
         self.spinBox.setValue(0)
         self.spinChange()
+        self.backButton.clicked.connect(self.backClicked)
+        self.nextButton.clicked.connect(self.nextClicked)
         
+    def backClicked(self):
+        if self.spinBox.value == 0:
+            return
+        else:
+            self.spinBox.setValue(self.spinBox.value() -1)
+            self.spinChange()
+    
+    def nextClicked(self):
+        if self.spinBox.value == len(self.pics)-1:
+            return
+        else:
+            self.spinBox.setValue(self.spinBox.value() + 1)
+            self.spinChange()
+            
     def spinChange(self):
         i = self.spinBox.value()
         self.scrollAreaWidgetContents.setPixmap(self.pixmaps[i]) 
