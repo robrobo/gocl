@@ -14,11 +14,13 @@ last edited: January 2015
 
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap, QPainter
+from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
+from PyQt5 import QtGui
 from PyQt5 import uic
 
-            
+
 class Example(QMainWindow):
     
     def __init__(self, pics):
@@ -36,6 +38,10 @@ class Example(QMainWindow):
         self.spinChange()
         self.backButton.clicked.connect(self.backClicked)
         self.nextButton.clicked.connect(self.nextClicked)
+    
+    def resizeEvent(self,resizeEvent):
+        self.spinChange()
+        
         
     def backClicked(self):
         if self.spinBox.value == 0:
@@ -54,8 +60,8 @@ class Example(QMainWindow):
     def spinChange(self):
         i = self.spinBox.value()
         label = self.scrollAreaWidgetContents
-        scaledPixmap = self.pixmaps[i].scaled(label.size(), Qt.KeepAspectRatio)
-        self.scrollAreaWidgetContents.setPixmap(scaledPixmap) 
+        pixmap = self.pixmaps[i].scaled(self.scrollAreaWidgetContents.size(), Qt.KeepAspectRatio, transformMode = Qt.SmoothTransformation)
+        self.scrollAreaWidgetContents.setPixmap(pixmap) 
         
                 
 if __name__ == '__main__':
