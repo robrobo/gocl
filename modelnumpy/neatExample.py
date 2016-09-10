@@ -200,14 +200,14 @@ def visualizeWinners(checkpoint):
 
     game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(15, 15), param=ca.defaultParameters)
     shape = game.getState()['shape']
-    game.setNewSpecies(shape[1]/4*shape[0]+shape[1]/4, 'winner1', 'blue')
-    game.setNewSpecies(shape[1]/4*shape[0]+shape[1]*3/4, 'winner2', 'red')
-    game.setNewSpecies(shape[1]*3/4*shape[0]+shape[1]/4, 'winner3', 'green')
-    game.setNewSpecies(shape[1]*3/4*shape[0]+shape[1]*3/4, 'winner4', 'yellow')
+    game.setNewSpecies(int(shape[1]*shape[0]/4*0), 'winner1', 'blue')
+    game.setNewSpecies(int(shape[1]*shape[0]/4*1-1), 'winner2', 'red')
+    game.setNewSpecies(int(shape[1]*shape[0]/4*2-1), 'winner3', 'green')
+    game.setNewSpecies(int(shape[1]*shape[0]/4*3-1), 'winner4', 'yellow')
 
     saveStatePicture(game.getState(), "pics")
 
-    while game.step < 500:
+    while game.step < 100:
         state = game.getState()
         for s in game.findSpecies():
             game.setDecisions(s,netDecision(state,s,winner_net))
@@ -222,6 +222,12 @@ def visualizeWinners(checkpoint):
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
-	#for _ in range(100):
-	#	main()
-    visualizeWinners('checkpoints/popv1.cpt')
+	if len(sys.argv) > 1:
+		if sys.argv[1] == 'train':
+			print("Starting training")
+			for _ in range(100):
+				main()
+			exit()
+			
+	print("Visualization only")
+	visualizeWinners('checkpoints/popv1.cpt')
