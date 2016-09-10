@@ -201,7 +201,7 @@ def visualizeWinners(checkpoint):
 
     saveStatePicture(game.getState(), "pics")
 
-    while game.step < 200:
+    while game.step < 1000:
         state = game.getState()
         for s in game.findSpecies():
             game.setDecisions(s,netDecision(state,s,winner_net))
@@ -212,7 +212,6 @@ def visualizeWinners(checkpoint):
 
     app = QApplication(sys.argv)
     pics = sort_nicely(glob.glob("pics/*"))
-    print(pics)
     ex = Example(pics)
 
     ex.show()
