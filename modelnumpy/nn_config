@@ -3,9 +3,9 @@ stagnation_type      = DefaultStagnation
 reproduction_type    = DefaultReproduction
 
 [phenotype]
-input_nodes          = 7
+input_nodes          = 13
 hidden_nodes         = 0
-output_nodes         = 19
+output_nodes         = 26
 initial_connection   = unconnected
 #unconnected fully_connected fs_neat unconnected partial 0.5
 #partial 0.5
@@ -17,7 +17,7 @@ activation_functions = sigmoid tanh clamped elu
 weight_stdev         = 1.0
 
 [genetic]
-pop_size                = 100
+pop_size                = 40
 max_fitness_threshold   = 200
 prob_add_conn           = 0.1
 prob_add_node           = 0.085

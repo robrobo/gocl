@@ -201,7 +201,7 @@ class CellularAutomaton(object):
 
 
 defaultParameters = {
-    'energy': {'stay': 1, 'move': 2, 'fight': 4, 'clone': 10, 'wall': 1, 'fromEmptyCells': 1, 'fromSun': 0, 'infuse': (5, 3), 'fightdamage': 8},
+    'energy': {'stay': 1, 'move': 2, 'fight': 4, 'clone': 10, 'wall': 1, 'fromEmptyCells': 1, 'fromSun': 0, 'infuse': (5, 3), 'fightdamage': 10},
     'size' : {'x': 5, 'y': 5} 
     }
 
