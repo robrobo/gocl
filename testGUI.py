@@ -60,7 +60,7 @@ class Example(QMainWindow):
     def spinChange(self):
         i = self.spinBox.value()
         label = self.scrollAreaWidgetContents
-        pixmap = self.pixmaps[i].scaled(self.scrollAreaWidgetContents.size(), Qt.KeepAspectRatio, transformMode = Qt.SmoothTransformation)
+        pixmap = self.pixmaps[i].scaled(self.scrollArea.size(), Qt.KeepAspectRatio, transformMode = Qt.SmoothTransformation)
         self.scrollAreaWidgetContents.setPixmap(pixmap) 
         
                 
