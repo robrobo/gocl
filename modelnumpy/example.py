@@ -2,10 +2,14 @@ import cellularAutomaton as ca
 import numpy as np
 from test2 import HexagonGenerator
 from PIL import Image, ImageDraw
-from tkinter import *
-from PIL import Image, ImageTk
-from copy import deepcopy
-from itertools import cycle
+import os, glob
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel
+from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5 import uic
+import sys
+sys.path.insert(0, '../')
+from testGUI import *
 
 # GUIDE
 # initilize game object with some initialState, e.g. cellularAutomaton.initializeHexagonal(), and some parameters, e.g. cellularAutomaton.defaultParameters
@@ -16,42 +20,49 @@ from itertools import cycle
 #       2.2 register your decisions with setDecisions(name, ['actions',targetvalue] where actions are valid actions and targetvalues are the neighbor index
 #       3. call evolve()
 
-# Initialisieren
-def main():
-    game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(10,10),param=ca.defaultParameters)
-
-    root = Tk()
-    root.geometry('500x500')
-    canvas = Canvas(root, width=500, height=500)
-    canvas.pack()
-    slideshow = []
-    game.setNewSpecies(3, 'Move', 'blue', 3)
-    game.setNewSpecies(11, 'Clone', 'green', 30)
+def saveStatePicture(state,directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
     hexagon_generator = HexagonGenerator(20)
-    for _ in range(10):
-        state = game.getState()
-        colors = np.reshape(state['cells'][:,2], state['shape'])
-        image = Image.new('RGB', (500, 500), 'white')
-        draw = ImageDraw.Draw(image)
-        for i in range(len(colors)):
+    colors = np.reshape(state['cells'][:,2], state['shape'])
+    image = Image.new('RGB', (500, 500), 'white')
+    draw = ImageDraw.Draw(image)
+    for i in range(len(colors)):
             for j in range(len(colors[0])):
                  hexagon = hexagon_generator(i, j)
                  draw.polygon(hexagon, outline='black', fill=colors[i,j])
-        image = ImageTk.PhotoImage(image)
-        slideshow.append(canvas.create_image(250,250,image=image))
+    image.save(directory + '/step' + str(state['step'])+ '.jpg')
 
+# Initialisieren
+def main():
+    filelist = glob.glob("pics/*")
+    for f in filelist:
+        os.remove(f)
+    game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(10,10),param=ca.defaultParameters)
+
+    game.setNewSpecies(3, 'Move', 'blue', 3)
+    game.setNewSpecies(11, 'Clone', 'green', 30)
+
+    saveStatePicture(game.getState(), "pics")
+
+    for _ in range(10):
+        state = game.getState()
         for s in game.findSpecies():
             game.setDecisions(s,makeDecision(state,s))
         print(game.cells[game.cells[:,1] != 'empty',:4])
         game.evolve()
+        saveStatePicture(state, "pics")
 
     print(game.cells[game.cells[:,1] != 'empty',:4])
-    print(slideshow)
-    for m in slideshow:
-        pass
-        #canvas.create_image(250,250,image=m)
-    root.mainloop()
-    exit()
+
+    app = QApplication(sys.argv)
+    pics = sorted(glob.glob("pics/*"))
+    ex = Example(pics)
+
+
+
+    ex.show()
+    sys.exit(app.exec_())
 
 # this is not how you have to make your decisions
 # this is just some simple function that makes decisions for species 'Move' and 'Clone'
