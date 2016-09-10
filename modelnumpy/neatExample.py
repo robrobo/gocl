@@ -192,15 +192,16 @@ def visualizeWinners(checkpoint):
     for f in filelist:
         os.remove(f)
 
-    game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(10, 10), param=ca.defaultParameters)
-    game.setNewSpecies(0, 'winner1', 'blue')
-    game.setNewSpecies(5, 'winner2', 'red')
-    game.setNewSpecies(50, 'winner3', 'green')
-    game.setNewSpecies(55, 'winner4', 'yellow')
+    game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(30, 30), param=ca.defaultParameters)
+    shape = game.getState()['shape']
+    game.setNewSpecies(shape[1]/4*shape[0]+shape[1]/4, 'winner1', 'blue')
+    game.setNewSpecies(shape[1]/4*shape[0]+shape[1]*3/4, 'winner2', 'red')
+    game.setNewSpecies(shape[1]*3/4*shape[0]+shape[1]/4, 'winner3', 'green')
+    game.setNewSpecies(shape[1]*3/4*shape[0]+shape[1]*3/4, 'winner4', 'yellow')
 
     saveStatePicture(game.getState(), "pics")
 
-    while game.step < 100:
+    while game.step < 200:
         state = game.getState()
         for s in game.findSpecies():
             game.setDecisions(s,netDecision(state,s,winner_net))

@@ -48,7 +48,7 @@ class HexagonGenerator(object):
 def saveStatePicture(state, directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
-    hexagon_generator = HexagonGenerator(20)
+    hexagon_generator = HexagonGenerator(8)
     colors = np.reshape(state['cells'][:, 2], state['shape'])
     image = Image.new('RGB', (500, 500), 'white')
     draw = ImageDraw.Draw(image)
@@ -56,4 +56,4 @@ def saveStatePicture(state, directory):
         for j in range(len(colors[0])):
             hexagon = hexagon_generator(i, j)
             draw.polygon(hexagon, outline='black', fill=colors[i, j])
-    image.save(directory + '/step' + str(state['step']) + '.jpg')
+    image.save(directory + '/step' + str(state['step']) + '.png')
