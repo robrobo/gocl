@@ -2,3 +2,4 @@
 pip3 install neat-python
 pip3 install numpy
 pip3 install pillow
+pip3 install pyqt5
