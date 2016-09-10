@@ -15,15 +15,17 @@ last edited: January 2015
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel
 from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtCore import Qt
 from PyQt5 import uic
 
-
+            
 class Example(QMainWindow):
     
     def __init__(self, pics):
         super().__init__()
         uic.loadUi('simpleGUI.ui', self)    
-        self.scrollAreaWidgetContents = QLabel()    
+        self.scrollAreaWidgetContents = QLabel()
+        #self.scrollAreaWidgetContents.setScaledContents(True);    
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.spinBox.setMinimum(0)
         self.spinBox.setMaximum(len(pics)-1)  
@@ -51,7 +53,10 @@ class Example(QMainWindow):
             
     def spinChange(self):
         i = self.spinBox.value()
-        self.scrollAreaWidgetContents.setPixmap(self.pixmaps[i]) 
+        label = self.scrollAreaWidgetContents
+        scaledPixmap = self.pixmaps[i].scaled(label.size(), Qt.KeepAspectRatio)
+        self.scrollAreaWidgetContents.setPixmap(scaledPixmap) 
+        
                 
 if __name__ == '__main__':
     
