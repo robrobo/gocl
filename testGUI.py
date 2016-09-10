@@ -35,11 +35,15 @@ class Example(QMainWindow):
         self.pixmaps =[QPixmap(a) for a in self.pics] 
         self.spinBox.valueChanged.connect(self.spinChange)
         self.spinBox.setValue(0)
-        self.spinChange()
         self.backButton.clicked.connect(self.backClicked)
         self.nextButton.clicked.connect(self.nextClicked)
-    
+        
+        
+            
     def resizeEvent(self,resizeEvent):
+        self.spinChange()
+        
+    def showEvent(self, showEvent):
         self.spinChange()
         
         
