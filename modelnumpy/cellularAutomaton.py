@@ -57,6 +57,7 @@ class CellularAutomaton(object):
         self.cells[(self.cells[:, 4] == 'move') & (self.cells[:, 3] < self.parameters['energy']['move']), 4] = 'stay'
         self.cells[(self.cells[:, 4] == 'clone') & (self.cells[:, 3] < self.parameters['energy']['clone']), 4] = 'stay'
         self.cells[(self.cells[:, 4] == 'fight') & (self.cells[:, 3] < self.parameters['energy']['fight']), 4] = 'stay'
+        self.cells[(self.cells[:, 4] == 'wall') & (self.cells[:, 3] < self.parameters['energy']['wall']), 4] = 'stay'
         self.cells[(self.cells[:, 4] == 'infuse') & (self.cells[:, 3] < self.parameters['energy']['infuse'][0]), 4] = 'stay'
 
         # take away their energy
@@ -64,6 +65,7 @@ class CellularAutomaton(object):
         self.cells[(self.cells[:, 4] == 'move'), 3] -= self.parameters['energy']['move']
         self.cells[(self.cells[:, 4] == 'clone'), 3] -= self.parameters['energy']['clone']
         self.cells[(self.cells[:, 4] == 'fight'), 3] -= self.parameters['energy']['fight']
+        self.cells[(self.cells[:, 4] == 'wall'), 3] -= self.parameters['energy']['wall']
         self.cells[(self.cells[:, 4] == 'infuse'), 3] -= self.parameters['energy']['infuse'][0]
 
         # if the target is invalid, cancel their move. energy is still lost
@@ -92,8 +94,12 @@ class CellularAutomaton(object):
 
         # first resolve all but fighting
         # walls cant be targeted and walls with 0 or less energy become empty
-        mask = (self.cells[:, 1] == 'wall') & (self.cells[:, 3] <= 0)
-        self.futureStates[mask] = ['empty', 'white', 0.0]
+        mask = self.cells[:, 4] == 'wall'
+        self.futureStates[mask, :2] = ['wall', 'grey']
+        self.futureStates[mask, :2] = ['wall', 'grey']
+        self.futureStates[mask, 2] = np.copy(self.cells[mask, 3])
+        mask = (self.futureStates[:, 0] == 'wall') & (self.futureStates[:, 2] <= 0)
+        self.futureStates[mask] = ['empty', 'black', 0.0]
 
         # moving cells leave an empty cell
         mask = self.cells[:, 4] == 'move'
@@ -105,11 +111,12 @@ class CellularAutomaton(object):
         self.futureStates[mask] = np.copy(self.cells[mask, 1:4])
         self.futureStates[targets[mask]] = np.copy(self.cells[mask, 1:4])
 
-        # fights make cells empty
+        # fights make cells empty in first version, now reduce energy, uncomment as wanted
         mask = (self.cells[:, 4] == 'fight')
-        self.futureStates[mask] = np.copy(self.cells[mask, 1:4])    # cells that stay
+        self.futureStates[mask] = np.copy(self.cells[mask, 1:4])
         mask = mask & (self.futureStates[targets][:,0] != 'empty') & (self.futureStates[targets][:,0] != 'wall')
-        self.futureStates[targets[mask]] = ['empty', 'black', 0.0]
+        #self.futureStates[targets[mask]] = ['empty', 'black', 0.0]							#this kills
+        self.futureStates[targets[mask],2] -= self.parameters['energy']['fightdamage']		#this reduces energy
 
         # cells without energy will die here before they get energy, if your species is too active it's bad
         #mask = ((self.cells[:, 1] != 'empty') & (self.cells[:, 3] <= 0))
@@ -125,14 +132,14 @@ class CellularAutomaton(object):
         self.cells[:, 1:4] = self.futureStates
 
         emptyNeighbors = self.cells[self.neighbors, 1] == 'empty'
-        self.cells[:, 3] += np.sum(emptyNeighbors, axis=1) * self.parameters['energy']['fromEmptyCells'] + \
+        mask = ( self.cells[:,1] != 'empty' ) & ( self.cells[:,1] != 'wall' )
+        self.cells[mask, 3] += np.sum(emptyNeighbors[mask], axis=1) * self.parameters['energy']['fromEmptyCells'] + \
                             self.parameters['energy']['fromSun']
-        # hmm, just setting empty and walls cells to 0 energy, bc why not
+        # hmm, just setting empty cells to 0 energy, bc why not
         self.cells[self.cells[:, 1] == 'empty', 3] = 0.0
         # this resets the goals, not necessary but easier to make tests for
         self.cells[:, 4] = 'stay'
         self.cells[:, 5] = 0
-        self.cells[self.cells[:, 1] == 'wall', 3] = 0.0
 
     def findSpecies(self):
         return np.unique(self.cells[:, 1])
@@ -155,7 +162,7 @@ class CellularAutomaton(object):
                     pass
 
         #invalid actions get overridden
-        self.cells[(self.cells[:,4] != 'move') & (self.cells[:,4] != 'fight') & (self.cells[:,4] != 'clone'),4] = 'stay'
+        self.cells[(self.cells[:,4] != 'move') & (self.cells[:,4] != 'fight') & (self.cells[:,4] != 'clone') & (self.cells[:,4] != 'wall') & (self.cells[:,4] != 'infuse'),4] = 'stay'
         #TODO maybe make some verbosity stuff to print this, so it does not spam when training
         #print("species counter: ", speciesCounter)
 
@@ -194,7 +201,7 @@ class CellularAutomaton(object):
 
 
 defaultParameters = {
-    'energy': {'stay': 1, 'move': 2, 'fight': 4, 'clone': 10, 'wall': 1, 'fromEmptyCells': 1, 'fromSun': 0, 'infuse': (5, 3)},
+    'energy': {'stay': 1, 'move': 2, 'fight': 4, 'clone': 10, 'wall': 1, 'fromEmptyCells': 1, 'fromSun': 0, 'infuse': (5, 3), 'fightdamage': 8},
     'size' : {'x': 5, 'y': 5} 
     }
 
