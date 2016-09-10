@@ -58,5 +58,5 @@ def saveStatePicture(state, directory):
         for j in range(len(colors[0])):
             hexagon = hexagon_generator(i, j)
             draw.polygon(hexagon, outline='black', fill=colors[i, j])
-    image.thumbnail((size[0],size[1]))   
+    image.thumbnail(size)   
     image.save(directory + '/step' + str(state['step']) + '.png')
