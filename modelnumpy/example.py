@@ -30,11 +30,11 @@ def main():
         state = game.getState()
         for s in game.findSpecies():
             game.setDecisions(s,makeDecision(state,s))
-        print(game.cells[game.cells[:,1] != 'empty',:4])
+        #print(game.cells[game.cells[:,1] != 'empty',:4])
         game.evolve()
         saveStatePicture(state, "pics")
 
-    print(game.cells[game.cells[:,1] != 'empty',:4])
+    #print(game.cells[game.cells[:,1] != 'empty',:4])
 
     app = QApplication(sys.argv)
     pics = sort_nicely(glob.glob("pics/*"))
