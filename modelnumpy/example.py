@@ -1,13 +1,7 @@
 import cellularAutomaton as ca
 import numpy as np
-from test2 import HexagonGenerator
-from PIL import Image, ImageDraw
-import os, glob
-import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel
-from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5 import uic
-import sys
+import os, glob, sys
+from util import * #HexagonGenerator,SaveStatePicture,sort_nicely
 sys.path.insert(0, '../')
 from testGUI import *
 
@@ -19,19 +13,6 @@ from testGUI import *
 #       2. make your decisions for your species by filtering cells, neighbors is an array that can be used as a mask for the cells array
 #       2.2 register your decisions with setDecisions(name, ['actions',targetvalue] where actions are valid actions and targetvalues are the neighbor index
 #       3. call evolve()
-
-def saveStatePicture(state,directory):
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    hexagon_generator = HexagonGenerator(20)
-    colors = np.reshape(state['cells'][:,2], state['shape'])
-    image = Image.new('RGB', (500, 500), 'white')
-    draw = ImageDraw.Draw(image)
-    for i in range(len(colors)):
-            for j in range(len(colors[0])):
-                 hexagon = hexagon_generator(i, j)
-                 draw.polygon(hexagon, outline='black', fill=colors[i,j])
-    image.save(directory + '/step' + str(state['step'])+ '.jpg')
 
 # Initialisieren
 def main():
@@ -45,7 +26,7 @@ def main():
 
     saveStatePicture(game.getState(), "pics")
 
-    for _ in range(10):
+    for _ in range(30):
         state = game.getState()
         for s in game.findSpecies():
             game.setDecisions(s,makeDecision(state,s))
@@ -56,10 +37,9 @@ def main():
     print(game.cells[game.cells[:,1] != 'empty',:4])
 
     app = QApplication(sys.argv)
-    pics = sorted(glob.glob("pics/*"))
+    pics = sort_nicely(glob.glob("pics/*"))
+    print(pics)
     ex = Example(pics)
-
-
 
     ex.show()
     sys.exit(app.exec_())

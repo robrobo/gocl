@@ -4,6 +4,10 @@ from neat import nn, population, statistics, activation_functions
 import cellularAutomaton as ca
 import numpy as np
 
+import os, glob, sys
+from util import * #HexagonGenerator,SaveStatePicture,sort_nicely
+sys.path.insert(0, '../')
+from testGUI import *
 
 # GUIDE
 # initilize game object with some initialState, e.g. cellularAutomaton.initializeHexagonal(), and some parameters, e.g. cellularAutomaton.defaultParameters
@@ -156,7 +160,7 @@ def main():
         pop.load_checkpoint(os.path.join(os.path.dirname(__file__), 'checkpoints/popv1.cpt'))
     except:
         pass
-    pop.run(eval_fitness_internalfight, 95)
+    pop.run(eval_fitness_internalfight, 1)
     pop.save_checkpoint(os.path.join(os.path.dirname(__file__), 'checkpoints/popv1.cpt'))
 
     statistics.save_stats(pop.statistics)
@@ -177,5 +181,42 @@ def main():
     print(game.cells[game.cells[:, 1] != 'empty', :4])
 
 
+def visualizeWinners(checkpoint):
+    pop = population.Population(os.path.join(os.path.dirname(__file__), 'nn_config'))
+    pop.load_checkpoint('checkpoints/popv1.cpt')
+    pop.run(eval_fitness_internalfight, 1)
+    winner = pop.statistics.best_genome()
+    winner_net = nn.create_feed_forward_phenotype(winner)
+
+    filelist = glob.glob("pics/*")
+    for f in filelist:
+        os.remove(f)
+
+    game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(10, 10), param=ca.defaultParameters)
+    game.setNewSpecies(0, 'winner1', 'blue')
+    game.setNewSpecies(5, 'winner2', 'red')
+    game.setNewSpecies(50, 'winner3', 'green')
+    game.setNewSpecies(55, 'winner4', 'yellow')
+
+    saveStatePicture(game.getState(), "pics")
+
+    while game.step < 100:
+        state = game.getState()
+        for s in game.findSpecies():
+            game.setDecisions(s,netDecision(state,s,winner_net))
+        game.evolve()
+        saveStatePicture(state, "pics")
+
+    print(game.cells[game.cells[:,1] != 'empty',:4])
+
+    app = QApplication(sys.argv)
+    pics = sort_nicely(glob.glob("pics/*"))
+    print(pics)
+    ex = Example(pics)
+
+    ex.show()
+    sys.exit(app.exec_())
+
 if __name__ == "__main__":
-    main()
+    #main()
+    visualizeWinners('checkpoints/popv1.cpt')
