@@ -1,6 +1,6 @@
 import math
 import os
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 import re
 import numpy as np
 
@@ -46,14 +46,17 @@ class HexagonGenerator(object):
 
 
 def saveStatePicture(state, directory):
+    size = (500,500)
+    edge = 16
     if not os.path.exists(directory):
         os.makedirs(directory)
-    hexagon_generator = HexagonGenerator(8)
+    hexagon_generator = HexagonGenerator(2*edge)
     colors = np.reshape(state['cells'][:, 2], state['shape'])
-    image = Image.new('RGB', (500, 500), 'white')
+    image = Image.new('RGB', (2*size[0],2*size[1]), 'white')
     draw = ImageDraw.Draw(image)
     for i in range(len(colors)):
         for j in range(len(colors[0])):
             hexagon = hexagon_generator(i, j)
             draw.polygon(hexagon, outline='black', fill=colors[i, j])
+    image.thumbnail(size)   
     image.save(directory + '/step' + str(state['step']) + '.png')
