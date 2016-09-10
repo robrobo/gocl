@@ -20,7 +20,7 @@ def main():
     for f in filelist:
         os.remove(f)
     x = 10
-    y = 20
+    y = 10
     game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(x,y),param=ca.defaultParameters)
 
     game.setNewSpecies(int(x*y/4*0), 'Clone', 'green', 30)
