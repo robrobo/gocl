@@ -6,7 +6,8 @@ import argparse
 from functools import partial
 
 import os, glob, sys
-from util import *  # HexagonGenerator,SaveStatePicture,sort_nicely
+#from util import *  # HexagonGenerator,SaveStatePicture,sort_nicely
+import util
 
 sys.path.insert(0, '../')
 from PyQt5.QtWidgets import QApplication
@@ -75,32 +76,46 @@ def countSpecies(state, spec):
 
 
 # this is a fitness function for training genomes by letting them play on a common field
+# since genome count is not constant we have to pad when training
+# since defaultstagnation does not work with this the worst genomes get fitness of 0
+# this will mean that if a genome is part of the worst ones for too long it is stagnated
 def eval_fitness_internalfight(allgenomes, num_runs=3, steplength=100, x=16, y=16):
     for g in allgenomes:
         g.fitness = 0
     # sadly, the number of genomes from neat-python is not fixed, so we only train some to fit %4
-    genomes = allgenomes[:int(len(allgenomes) / 4) * 4]
-    print(len(allgenomes), len(genomes))
+    topad = int(np.ceil(len(allgenomes)/4)*4-len(allgenomes))
+    traincount = np.zeros(len(allgenomes))
+    trainfitness = np.zeros(len(allgenomes))
+    print(len(allgenomes),topad)
     for _ in range(num_runs):
         # geht nur, wenn genomes durch 4 teilbar ist TODO change this
-        grouping = np.reshape(np.random.permutation(len(genomes)), (len(genomes) / 4, 4))
+        grouping = np.random.permutation(len(allgenomes))
+        if topad > 0:
+            grouping = np.concatenate((grouping, np.random.choice(grouping,topad)))
+
+        grouping = np.reshape(grouping, (len(grouping)/4, 4))
         for group in grouping:
             nets = []
             game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(x, y), param=ca.defaultParameters)
             for i, g in enumerate(group):
-                nets.append(nn.create_feed_forward_phenotype(genomes[g]))
-                # TODO positon the starting cells better
-                game.setNewSpecies(nicePositions4(i,x,y), 'spec' + str(i))
+                nets.append(nn.create_feed_forward_phenotype(allgenomes[g]))
+                game.setNewSpecies(util.nicePositions4(i,x,y), 'spec' + str(i))
             while game.step < steplength:
                 state = game.getState()
                 for j, g in enumerate(group):
                     game.setDecisions('spec' + str(j), netDecision(state, 'spec' + str(j), nets[j]))
                 game.evolve()
             for k, g in enumerate(group):
-                genomes[g].fitness += countSpecies(game.getState(), 'spec' + str(k))
+                trainfitness[g] += countSpecies(game.getState(), 'spec' + str(k))
+                traincount[g] += 1
+    # divide training results by traincount, bc of padding etc this has to be done
+    # fitness of all below median is set to zero
+    trainfitness = trainfitness/traincount
+    trainfitness[trainfitness < np.median(trainfitness)] = 0
+
     # results of fights define the fitness
-    for g in genomes:
-        g.fitness = g.fitness / num_runs
+    for k, g in enumerate(allgenomes):
+        g.fitness = trainfitness[k]
 
 
 # adding elu to activation functions
@@ -120,7 +135,7 @@ def train(checkpoint, config):
     except:
         print("Checkpoint not found, starting from scratch: ", checkpoint)
     trainfunc = partial(eval_fitness_internalfight, num_runs=4, steplength=100, x=16, y=16)
-    pop.run(trainfunc, 10)
+    pop.run(trainfunc, 20)
     pop.save_checkpoint(checkpoint)
 
     statistics.save_stats(pop.statistics)
@@ -132,36 +147,31 @@ def train(checkpoint, config):
 
 
 def visualizeWinners(checkpoint, config, picdir, rounds):
-    pop = population.Population(config)
-    pop.load_checkpoint(checkpoint)
-    trainfunc = partial(eval_fitness_internalfight, num_runs=10, steplength=200, x=16, y=16)
-    pop.run(trainfunc, 1)
-    winner = pop.statistics.best_genome()
-    p = []
-    best4 = []
-    for s in pop.species:
-        p.extend(s.members)
-    for c in np.random.choice(len(p), 4, replace=False):
-        best4.append(p[c])
-
+    colors = ['red', 'yellow', 'green', 'blue']
+    while len(checkpoint) < 4:
+        checkpoint.extend(checkpoint)
+    checkpoint = checkpoint[:4]
+    print("Going to let fight: ", checkpoint)
+    print("With colors: ", colors)
     nets = {}
-    nets['place1'] = nn.create_feed_forward_phenotype(winner)
-    nets['place2'] = nn.create_feed_forward_phenotype(best4[1])
-    nets['place3'] = nn.create_feed_forward_phenotype(best4[2])
-    nets['place4'] = nn.create_feed_forward_phenotype(best4[3])
+    for i, c in enumerate(checkpoint):
+        pop = population.Population(config)
+        pop.load_checkpoint(c)
+        trainfunc = partial(eval_fitness_internalfight, num_runs=10, steplength=200, x=16, y=16)
+        pop.run(trainfunc, 1)
+        winner = pop.statistics.best_genome()
+        nets[c+str(i)] = nn.create_feed_forward_phenotype(winner)
 
     filelist = glob.glob(os.path.join(picdir, 'step*.png'))
     for f in filelist:
         os.remove(f)
 
-    game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(16, 16), param=ca.defaultParameters)
-    shape = game.getState()['shape']
-    game.setNewSpecies(nicePositions4(0,16,16), 'place1', 'red')
-    game.setNewSpecies(nicePositions4(1,16,16), 'place2', 'yellow')
-    game.setNewSpecies(nicePositions4(2,16,16), 'place3', 'green')
-    game.setNewSpecies(nicePositions4(3,16,16), 'place4', 'blue')
+    x = 40; y = 40
+    game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(x, y), param=ca.defaultParameters)
+    for i,k in enumerate(nets.keys()):
+        game.setNewSpecies(util.nicePositions4(i,x, y), k, colors[i])
 
-    saveStatePicture(game.getState(), picdir)
+    util.saveStatePicture(game.getState(), picdir)
 
     while game.step < rounds:
         state = game.getState()
@@ -171,10 +181,10 @@ def visualizeWinners(checkpoint, config, picdir, rounds):
             except:
                 pass
         game.evolve()
-        saveStatePicture(state, picdir)
+        util.saveStatePicture(state, picdir)
 
     app = QApplication(sys.argv)
-    pics = sort_nicely(glob.glob(os.path.join(picdir, 'step*.png')))
+    pics = util.sort_nicely(glob.glob(os.path.join(picdir, 'step*.png')))
     gui = SimpleGUI(pics)
 
     gui.show()
@@ -187,10 +197,10 @@ def main():
     parser.add_argument('-f', default=False, action='store_true', help='show a fight')
     parser.add_argument('-t', default=False, action='store_true', help='train the population')
     parser.add_argument('-g', default=1, type=int,
-                        help='generations to train, will be multiplied by 10, checkpoints are saved after 10 generations')
-    parser.add_argument('-r', default=300, type=int, help='rounds to fight')
+                        help='generations to train, will be multiplied by 20, checkpoints are saved after 20 generations')
+    parser.add_argument('-r', default=1000, type=int, help='rounds to fight')
     parser.add_argument('-p', default='pics/', help='directory for the pics of the fight')
-    parser.add_argument('-c', default='checkpoints/somepop.cpt', type=str, help='checkpoint file to use, save and load')
+    parser.add_argument('-c', default=['checkpoints/somepop.cpt'], type=str, nargs='+', help='checkpoint file to use, save and load')
     parser.add_argument('-C', default='nn_config', type=str,
                         help='config file to use, should fit the netDecision function')
 
@@ -207,9 +217,9 @@ def main():
     if (TRAINFLAG == False) & (FIGHTFLAG == False):
         print("Both flags are False, use -f or -t to fight or train!")
     if TRAINFLAG:
-        print("Starting training, saving in ", CHECKPOINT)
+        print("Starting training, saving in ", CHECKPOINT[0])
         for _ in range(TRAINGENS):
-            train(CHECKPOINT, CONFIG)
+            train(CHECKPOINT[0], CONFIG)
     if FIGHTFLAG:
         print("Letting average winner (red) and 3 others fight, saving in ", PICDIR)
         visualizeWinners(CHECKPOINT, CONFIG, PICDIR, FIGHTROUNDS)

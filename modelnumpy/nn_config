@@ -4,9 +4,9 @@ reproduction_type    = DefaultReproduction
 
 [phenotype]
 input_nodes          = 13
-hidden_nodes         = 0
+hidden_nodes         = 12
 output_nodes         = 26
-initial_connection   = unconnected
+initial_connection   = partial 0.1
 #unconnected fully_connected fs_neat unconnected partial 0.5
 #partial 0.5
 max_weight           = 30
@@ -19,10 +19,10 @@ weight_stdev         = 1.0
 [genetic]
 pop_size                = 40
 max_fitness_threshold   = 200
-prob_add_conn           = 0.5
+prob_add_conn           = 0.7
 prob_add_node           = 0.3
-prob_delete_conn        = 0.1
-prob_delete_node        = 0.05
+prob_delete_conn        = 0.05
+prob_delete_node        = 0.025
 prob_mutate_bias        = 0.0509
 bias_mutation_power     = 2.093
 prob_mutate_response    = 0.1
@@ -42,8 +42,8 @@ weight_coefficient      = 0.5
 
 [DefaultStagnation]
 species_fitness_func = median
-max_stagnation       = 15
+max_stagnation       = 10
 
 [DefaultReproduction]
-elitism              = 0
+elitism              = 1
 survival_threshold   = 0.2
