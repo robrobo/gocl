@@ -4,8 +4,8 @@ import os, glob, sys
 import util
 from util import * #HexagonGenerator,SaveStatePicture,sort_nicely
 sys.path.insert(0, '../')
-from testGUI import *
-
+from PyQt5.QtWidgets import QApplication
+from simpleGUI import SimpleGUI
 # GUIDE
 # initilize game object with some initialState, e.g. cellularAutomaton.initializeHexagonal(), and some parameters, e.g. cellularAutomaton.defaultParameters
 # add your species with game.setNewSpecies(index, name, color, energy), only index and name are really needed
@@ -44,9 +44,9 @@ def main():
 
     app = QApplication(sys.argv)
     pics = sort_nicely(glob.glob("pics/*"))
-    ex = Example(pics)
+    gui = SimpleGUI(pics)
 
-    ex.show()
+    gui.show()
     sys.exit(app.exec_())
 
 # this is not how you have to make your decisions

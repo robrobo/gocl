@@ -9,8 +9,8 @@ import os, glob, sys
 from util import *  # HexagonGenerator,SaveStatePicture,sort_nicely
 
 sys.path.insert(0, '../')
-from testGUI import *
-
+from PyQt5.QtWidgets import QApplication
+from simpleGUI import SimpleGUI
 
 # GUIDE
 # initilize game object with some initialState, e.g. cellularAutomaton.initializeHexagonal(), and some parameters, e.g. cellularAutomaton.defaultParameters
@@ -175,9 +175,9 @@ def visualizeWinners(checkpoint, config, picdir, rounds):
 
     app = QApplication(sys.argv)
     pics = sort_nicely(glob.glob(os.path.join(picdir, 'step*.png')))
-    ex = Example(pics)
+    gui = SimpleGUI(pics)
 
-    ex.show()
+    gui.show()
     sys.exit(app.exec_())
 
 
