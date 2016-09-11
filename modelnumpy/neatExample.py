@@ -2,6 +2,7 @@ from functools import partial
 from neat import nn, population, statistics, activation_functions
 import cellularAutomaton as ca
 import numpy as np
+import argparse
 
 import os, glob, sys
 from util import * #HexagonGenerator,SaveStatePicture,sort_nicely
@@ -176,9 +177,9 @@ def train():
     print('\nBest genome:\n{!s}'.format(winner))
 
 
-def visualizeWinners(checkpoint):
-    pop = population.Population(os.path.join(os.path.dirname(__file__), 'nn_config'))
-    pop.load_checkpoint('checkpoints/popv1.cpt')
+def visualizeWinners(checkpoint, config, picdir, rounds):
+    pop = population.Population(config)
+    pop.load_checkpoint(checkpoint)
     pop.run(eval_fitness_internalfight, 1)
     winner = pop.statistics.best_genome()
     p = []
@@ -194,7 +195,9 @@ def visualizeWinners(checkpoint):
     nets['place3'] = nn.create_feed_forward_phenotype(best4[2])
     nets['place4'] = nn.create_feed_forward_phenotype(best4[3])
 
-    filelist = glob.glob("pics/*")
+    filelist = glob.glob(os.path.join(picdir,'step*.png'))
+    print(filelist)
+    exit()
     for f in filelist:
         os.remove(f)
 
@@ -205,9 +208,9 @@ def visualizeWinners(checkpoint):
     game.setNewSpecies(int(shape[1]*shape[0]/4*2-1), 'place3', 'green')
     game.setNewSpecies(int(shape[1]*shape[0]/4*3-1), 'place4', 'blue')
 
-    saveStatePicture(game.getState(), "pics")
+    saveStatePicture(game.getState(), picdir)
 
-    while (game.step < 200) & (len(game.findSpecies()) > 2):
+    while game.step < rounds:
         state = game.getState()
         for s in game.findSpecies():
             try:
@@ -215,25 +218,45 @@ def visualizeWinners(checkpoint):
             except:
                 pass
         game.evolve()
-        saveStatePicture(state, "pics")
+        saveStatePicture(state, picdir)
 
     app = QApplication(sys.argv)
-    pics = sort_nicely(glob.glob("pics/*"))
+    pics = sort_nicely(glob.glob(os.path.join(picdir,'step*.png')))
     ex = Example(pics)
 
     ex.show()
     sys.exit(app.exec_())
 
+#===============================================================================
 def main():
-	if len(sys.argv) > 1:
-		if sys.argv[1] == 'train':
-			print("Starting training")
-			for _ in range(100):
-				train()
-			exit()
-			
-	print("Visualization only")
-	visualizeWinners('checkpoints/popv1.cpt')
+    parser = argparse.ArgumentParser(description='Train or let play NNs with neat')
+    parser.add_argument('-f', default=False, action='store_true', help='show a fight')
+    parser.add_argument('-t', default=False, action='store_true', help='train the population')
+    parser.add_argument('-g', default=1, type=int, help='generations to train, will be multiplied by 10, checkpoints are saved after 10 generations')
+    parser.add_argument('-r', default=300, type=int, help='rounds to fight')
+    parser.add_argument('-p', default='pics/', help='directory for the pics of the fight')
+    parser.add_argument('-c', default='checkpoints/somepop.cpt', type=str, help='checkpoint file to use, save and load')
+    parser.add_argument('-C', default='nn_config', type=str, help='config file to use, should fit the netDecision function')
+
+    args = parser.parse_args()
+
+    FIGHTFLAG = args.f
+    TRAINFLAG = args.t
+    TRAINGENS = args.g
+    FIGHTROUNDS = args.r
+    PICDIR = args.p
+    CHECKPOINT = args.c
+    CONFIG = args.C
+
+    if (TRAINFLAG == False) & (FIGHTFLAG == False):
+        print("Both flags are False, use -f or -t to fight or train!")
+    if TRAINFLAG:
+        print("Starting training, saving in ",CHECKPOINT)
+        for _ in range(TRAINGENS):
+        train(CHECKPOINT, CONFIG)
+    if FIGHTFLAG:
+        print("Letting winner and 3 others fight, saving in ", PICDIR)
+        visualizeWinners(CHECKPOINT, CONFIG, PICDIR, FIGHTROUNDS)
 
 if __name__ == "__main__":
 	main()
