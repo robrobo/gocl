@@ -60,3 +60,7 @@ def saveStatePicture(state, directory):
             draw.polygon(hexagon, outline='black', fill=colors[i, j])
     image.thumbnail(size)   
     image.save(directory + '/step' + str(state['step']) + '.png')
+
+def nicePositions4(i,x,y):
+    temp = np.reshape(np.arange(x*y),(x,y))
+    return temp[(i*(x//4)+x//4)%x, (i*(y//2)+y//4)%y]

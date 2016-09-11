@@ -75,7 +75,7 @@ def countSpecies(state, spec):
 
 
 # this is a fitness function for training genomes by letting them play on a common field
-def eval_fitness_internalfight(allgenomes, num_runs=3, steplength=100, x=15, y=15):
+def eval_fitness_internalfight(allgenomes, num_runs=3, steplength=100, x=16, y=16):
     for g in allgenomes:
         g.fitness = 0
     # sadly, the number of genomes from neat-python is not fixed, so we only train some to fit %4
@@ -90,7 +90,7 @@ def eval_fitness_internalfight(allgenomes, num_runs=3, steplength=100, x=15, y=1
             for i, g in enumerate(group):
                 nets.append(nn.create_feed_forward_phenotype(genomes[g]))
                 # TODO positon the starting cells better
-                game.setNewSpecies(int(i * x * y / 4), 'spec' + str(i))
+                game.setNewSpecies(nicePositions4(i,x,y), 'spec' + str(i))
             while game.step < steplength:
                 state = game.getState()
                 for j, g in enumerate(group):
@@ -119,7 +119,7 @@ def train(checkpoint, config):
         pop.load_checkpoint(checkpoint)
     except:
         print("Checkpoint not found, starting from scratch: ", checkpoint)
-    trainfunc = partial(eval_fitness_internalfight, num_runs=4, steplength=100, x=15, y=15)
+    trainfunc = partial(eval_fitness_internalfight, num_runs=4, steplength=100, x=16, y=16)
     pop.run(trainfunc, 10)
     pop.save_checkpoint(checkpoint)
 
@@ -134,7 +134,7 @@ def train(checkpoint, config):
 def visualizeWinners(checkpoint, config, picdir, rounds):
     pop = population.Population(config)
     pop.load_checkpoint(checkpoint)
-    trainfunc = partial(eval_fitness_internalfight, num_runs=10, steplength=200, x=15, y=15)
+    trainfunc = partial(eval_fitness_internalfight, num_runs=10, steplength=200, x=16, y=16)
     pop.run(trainfunc, 1)
     winner = pop.statistics.best_genome()
     p = []
@@ -154,12 +154,12 @@ def visualizeWinners(checkpoint, config, picdir, rounds):
     for f in filelist:
         os.remove(f)
 
-    game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(15, 15), param=ca.defaultParameters)
+    game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(16, 16), param=ca.defaultParameters)
     shape = game.getState()['shape']
-    game.setNewSpecies(int(shape[1] * shape[0] / 4 * 0), 'place1', 'red')
-    game.setNewSpecies(int(shape[1] * shape[0] / 4 * 1 - 1), 'place2', 'yellow')
-    game.setNewSpecies(int(shape[1] * shape[0] / 4 * 2 - 1), 'place3', 'green')
-    game.setNewSpecies(int(shape[1] * shape[0] / 4 * 3 - 1), 'place4', 'blue')
+    game.setNewSpecies(nicePositions4(0,16,16), 'place1', 'red')
+    game.setNewSpecies(nicePositions4(0,16,16), 'place2', 'yellow')
+    game.setNewSpecies(nicePositions4(0,16,16), 'place3', 'green')
+    game.setNewSpecies(nicePositions4(0,16,16), 'place4', 'blue')
 
     saveStatePicture(game.getState(), picdir)
 
