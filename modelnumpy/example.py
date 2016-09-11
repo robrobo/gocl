@@ -1,6 +1,7 @@
 import cellularAutomaton as ca
 import numpy as np
 import os, glob, sys
+import util
 from util import * #HexagonGenerator,SaveStatePicture,sort_nicely
 sys.path.insert(0, '../')
 from testGUI import *
@@ -19,14 +20,14 @@ def main():
     filelist = glob.glob("pics/*")
     for f in filelist:
         os.remove(f)
-    x = 10
-    y = 10
+    x = 16
+    y = 16
     game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(x,y),param=ca.defaultParameters)
 
-    game.setNewSpecies(int(x*y/4*0), 'Clone', 'green', 30)
-    game.setNewSpecies(int(x*y/4*1), 'Move', 'blue', 3)
-    game.setNewSpecies(int(x*y/4*2), 'Move', 'blue', 3)
-    game.setNewSpecies(int(x*y/4*3), 'Move', 'blue', 3)
+    game.setNewSpecies(nicePositions4(0,x,y), 'Clone', 'green', 30)
+    game.setNewSpecies(nicePositions4(1,x,y), 'Move', 'blue', 3)
+    game.setNewSpecies(nicePositions4(2,x,y), 'Move', 'blue', 3)
+    game.setNewSpecies(nicePositions4(3,x,y), 'Move', 'blue', 3)
     
 
     saveStatePicture(game.getState(), "pics")
@@ -43,7 +44,6 @@ def main():
 
     app = QApplication(sys.argv)
     pics = sort_nicely(glob.glob("pics/*"))
-    print(pics)
     ex = Example(pics)
 
     ex.show()
