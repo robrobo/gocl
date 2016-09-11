@@ -157,9 +157,9 @@ def visualizeWinners(checkpoint, config, picdir, rounds):
     game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(16, 16), param=ca.defaultParameters)
     shape = game.getState()['shape']
     game.setNewSpecies(nicePositions4(0,16,16), 'place1', 'red')
-    game.setNewSpecies(nicePositions4(0,16,16), 'place2', 'yellow')
-    game.setNewSpecies(nicePositions4(0,16,16), 'place3', 'green')
-    game.setNewSpecies(nicePositions4(0,16,16), 'place4', 'blue')
+    game.setNewSpecies(nicePositions4(1,16,16), 'place2', 'yellow')
+    game.setNewSpecies(nicePositions4(2,16,16), 'place3', 'green')
+    game.setNewSpecies(nicePositions4(3,16,16), 'place4', 'blue')
 
     saveStatePicture(game.getState(), picdir)
 
