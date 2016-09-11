@@ -1,4 +1,3 @@
-import os
 from functools import partial
 from neat import nn, population, statistics, activation_functions
 import cellularAutomaton as ca

@@ -43,7 +43,6 @@ def main():
 
     app = QApplication(sys.argv)
     pics = sort_nicely(glob.glob("pics/*"))
-    print(pics)
     ex = Example(pics)
 
     ex.show()
