@@ -3,12 +3,14 @@ from neat import nn, population, statistics, activation_functions
 import cellularAutomaton as ca
 import numpy as np
 import argparse
+from functools import partial
 
 import os, glob, sys
 from util import *  # HexagonGenerator,SaveStatePicture,sort_nicely
 
 sys.path.insert(0, '../')
 from testGUI import *
+
 
 # GUIDE
 # initilize game object with some initialState, e.g. cellularAutomaton.initializeHexagonal(), and some parameters, e.g. cellularAutomaton.defaultParameters
@@ -71,24 +73,25 @@ def netDecision(state, spec, net):
 def countSpecies(state, spec):
     return np.sum(state['cells'][:, 1] == spec)
 
+
 # this is a fitness function for training genomes by letting them play on a common field
-def eval_fitness_internalfight(allgenomes):
-    num_runs = 3
+def eval_fitness_internalfight(allgenomes, num_runs=3, steplength=100, x=15, y=15):
     for g in allgenomes:
         g.fitness = 0
     # sadly, the number of genomes from neat-python is not fixed, so we only train some to fit %4
     genomes = allgenomes[:int(len(allgenomes) / 4) * 4]
     print(len(allgenomes), len(genomes))
     for _ in range(num_runs):
-        # geht nur, wenn genomes durch 4 teilbar ist
+        # geht nur, wenn genomes durch 4 teilbar ist TODO change this
         grouping = np.reshape(np.random.permutation(len(genomes)), (len(genomes) / 4, 4))
         for group in grouping:
             nets = []
-            game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(15, 15), param=ca.defaultParameters)
+            game = ca.CellularAutomaton(initialState=ca.initializeHexagonal(x, y), param=ca.defaultParameters)
             for i, g in enumerate(group):
                 nets.append(nn.create_feed_forward_phenotype(genomes[g]))
-                game.setNewSpecies(int(i * 15 * 15 / 4), 'spec' + str(i))
-            while game.step < 100:
+                # TODO positon the starting cells better
+                game.setNewSpecies(int(i * x * y / 4), 'spec' + str(i))
+            while game.step < steplength:
                 state = game.getState()
                 for j, g in enumerate(group):
                     game.setDecisions('spec' + str(j), netDecision(state, 'spec' + str(j), nets[j]))
@@ -116,7 +119,8 @@ def train(checkpoint, config):
         pop.load_checkpoint(checkpoint)
     except:
         print("Checkpoint not found, starting from scratch: ", checkpoint)
-    pop.run(eval_fitness_internalfight, 10)
+    trainfunc = partial(eval_fitness_internalfight, num_runs=4, steplength=100, x=15, y=15)
+    pop.run(trainfunc, 10)
     pop.save_checkpoint(checkpoint)
 
     statistics.save_stats(pop.statistics)
@@ -130,7 +134,8 @@ def train(checkpoint, config):
 def visualizeWinners(checkpoint, config, picdir, rounds):
     pop = population.Population(config)
     pop.load_checkpoint(checkpoint)
-    pop.run(eval_fitness_internalfight, 1)
+    trainfunc = partial(eval_fitness_internalfight, num_runs=10, steplength=200, x=15, y=15)
+    pop.run(trainfunc, 1)
     winner = pop.statistics.best_genome()
     p = []
     best4 = []
@@ -206,7 +211,7 @@ def main():
         for _ in range(TRAINGENS):
             train(CHECKPOINT, CONFIG)
     if FIGHTFLAG:
-        print("Letting winner and 3 others fight, saving in ", PICDIR)
+        print("Letting average winner (red) and 3 others fight, saving in ", PICDIR)
         visualizeWinners(CHECKPOINT, CONFIG, PICDIR, FIGHTROUNDS)
 
 
