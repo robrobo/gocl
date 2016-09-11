@@ -25,8 +25,8 @@ class HexagonGenerator(object):
 
     def __init__(self, edgeLength):
         self.edgeLength = edgeLength
-        self.offsetX = 0
-        self.offsetY = edgeLength / 2
+        self.offsetX = 2
+        self.offsetY = 2+edgeLength / 2
 
     def __call__(self, row, col):
         if row % 2 == 0:

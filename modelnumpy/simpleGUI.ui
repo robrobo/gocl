@@ -26,11 +26,9 @@
          <x>0</x>
          <y>0</y>
          <width>790</width>
-         <height>482</height>
+         <height>507</height>
         </rect>
        </property>
-       <zorder>spinBox</zorder>
-       <zorder>widget</zorder>
       </widget>
      </widget>
     </item>
@@ -74,31 +72,12 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="widget_2" native="true">
-         <zorder>backButton</zorder>
-         <zorder>scrollArea</zorder>
-        </widget>
+        <widget class="QWidget" name="widget_2" native="true"/>
        </item>
       </layout>
      </widget>
     </item>
    </layout>
-  </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>810</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <widget class="QMenu" name="menuTest">
-    <property name="title">
-     <string>Test</string>
-    </property>
-   </widget>
-   <addaction name="menuTest"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
