@@ -69,11 +69,13 @@ class CellularAutomaton(object):
         self.cells[(self.cells[:, 4] == 'infuse'), 3] -= self.parameters['energy']['infuse'][0]
 
         # if the target is invalid, cancel their move. energy is still lost
-        self.cells[self.cells[targets, 1] == 'wall', 4] = 'stay'
+        # turning into a wall will be faster than fighting but slower than infusing
+        self.cells[(self.cells[targets, 1] == 'wall') | (self.cells[targets, 4] == 'wall'), 4] = 'stay'
         self.cells[(self.cells[:, 4] == 'move') & (self.cells[targets, 1] != 'empty'), 4] = 'stay'
         self.cells[(self.cells[:, 4] == 'clone') & (self.cells[targets, 1] != 'empty'), 4] = 'stay'
         self.cells[(self.cells[:, 4] == 'fight') & (
             (self.cells[targets, 1] == 'empty') | (self.cells[targets, 1] == 'wall')), 4] = 'stay'
+        #this currently allows infusing walls
         self.cells[(self.cells[:, 4] == 'infuse') & (self.cells[targets, 1] == 'empty'), 4] = 'stay'
 
         # randomly reduce duplicate targets
@@ -93,13 +95,11 @@ class CellularAutomaton(object):
         self.cells[targets[mask], 3] += self.parameters['energy']['infuse'][1]
 
         # first resolve all but fighting
-        # walls cant be targeted and walls with 0 or less energy become empty
+        # wall cells are grey for now, take over their energy
         mask = self.cells[:, 4] == 'wall'
         self.futureStates[mask, :2] = ['wall', 'grey']
         self.futureStates[mask, :2] = ['wall', 'grey']
         self.futureStates[mask, 2] = np.copy(self.cells[mask, 3])
-        mask = (self.futureStates[:, 0] == 'wall') & (self.futureStates[:, 2] <= 0)
-        self.futureStates[mask] = ['empty', 'black', 0.0]
 
         # moving cells leave an empty cell
         mask = self.cells[:, 4] == 'move'
